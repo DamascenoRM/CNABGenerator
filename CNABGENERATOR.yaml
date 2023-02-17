@@ -1,0 +1,195 @@
+openapi: 3.0.3
+#HEADER START
+info:
+  title: CNAB Generator
+  description: |-
+    This API is capable of creating a CNAB from `CSV`, `XML` or `JSON` files, it is also capable of converting between known layouts.
+
+    To access all the documentation, use [`our GitHub page`](https://github.com/DamascenoRM/CNABGenerator)
+    
+  termsOfService: https://github.com/DamascenoRM/CNABGenerator/blob/main/TERMS.md
+  contact:
+    email: rafael_damasceno@hotmail.com
+  license:
+    name: Apache 2.0
+    url: https://raw.githubusercontent.com/DamascenoRM/CNABGenerator/main/LICENSE
+  version: 0.0.1
+externalDocs:
+  description: Find out more about CNAB Generator
+  url: https://github.com/DamascenoRM/CNABGenerator/blob/main/README.md
+servers:
+  - url: https://github.com/DamascenoRM/CNABGenerator/api/v3
+#HEADER END
+#TAGS START
+tags:
+  - name: CNAB
+    description: All CNAB files
+  - name: Layout
+    description: Layouts of inputs and outputs 
+  - name: Input
+    description: All inputs information
+  - name: Configurations
+    description: All configurations
+#TAGS END
+#PATHS START
+paths:
+  /cnab:
+    get:
+      tags:
+        - CNAB
+      summary: Get a CNAB file
+      description: Retrieve a stored CNAB file
+      operationId: getCNAB
+      parameters:
+        - name: operation
+          in: query
+          description: Operation ID 
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: File creation date-time min, in [`RFC 3339, section 5.6`](https://www.rfc-editor.org/rfc/rfc3339#section-5.6) format
+          example: 2023-02-21T17:32:28Z
+          
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: File creation date-time max, in [`RFC 3339, section 5.6`](https://www.rfc-editor.org/rfc/rfc3339#section-5.6) format
+          example: 2023-02-21T18:32:28Z
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CNABpath'          
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CNABpath'
+        '400':
+          description: Invalid arguments value
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArgumentError'          
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArgumentError'
+      security:
+        - OAuth2:
+            - read:cnab
+
+#COMPONENTS START
+components:
+  #SCHEMAS START
+  schemas:
+    CNABpath:
+      type: object
+      properties:
+        operation:
+          description: Operation number
+          type: integer
+          format: int64
+          example: 198772
+        size:
+          description: Layout size
+          type: integer
+          format: int32
+          example: 444
+        layout:
+          type: string
+          description: Layout owner
+          example: fromtis
+        path:
+          type: string
+          format: uri
+          description: Path of CNAB file
+          example: https://github.com/DamascenoRM/CNABGenerator/cnabs/CNABGenerator198772_01022013.rem
+        created:
+          type: string
+          description: File creation date, in [`RFC 3339, section 5.6`](https://www.rfc-editor.org/rfc/rfc3339#section-5.6) format
+          format: date
+          example: 2023-02-01
+    ArgumentError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Argument Error
+          example: Invalid datetime format, expected YYYY-MM-DDTHH:MM:SSZ
+        date:
+          type: string
+          description: Error date, in [`RFC 3339, section 5.6`](https://www.rfc-editor.org/rfc/rfc3339#section-5.6) format
+          format: date-time
+          example: 2023-02-01T20:30:00Z
+        requestUri:
+          type: string
+          description: Called URI
+          format: uri
+          example: /cnab
+        requestMethod:
+          description: Called method
+          type: string
+          example: get
+          nullable: true
+          enum:
+            - get
+            - post
+            - put
+            - delete
+        requestArguments:
+          type: object
+          description: Arguments used in the request
+          properties:
+            argument:
+              type: string
+              description: Arguments called
+              example: start_date
+            value:
+              type: string
+              description: Value of arguments called
+              example: 2023-02-01
+  #SCHEMAS END
+  #REQUEST BODIES START
+  requestBodies:
+    CNAB:
+      description: CNAB path
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CNABpath'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/CNABpath'
+  #REQUEST BODIES END
+  #SECURITY START
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.com/oauth/authorize
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            read: Grants read access
+            write: Grants write access
+            admin: Grants access to admin operations
+  #SECURITY END
+#COMPONENTS END
